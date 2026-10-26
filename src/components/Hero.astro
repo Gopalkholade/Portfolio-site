@@ -1,0 +1,35 @@
+---
+import type { Profile } from '../types';
+
+interface Props {
+  profile: Profile;
+}
+
+const { profile } = Astro.props;
+---
+<section class="mb-16">
+  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-stroke bg-surface text-accent font-mono text-xs mb-6">
+    <span class="w-2 h-2 rounded-full bg-accent animate-ping"></span>
+    Open to Technical Opportunities
+  </div>
+  <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-text-main mb-4">
+    {profile.name}
+  </h1>
+  <p class="text-lg md:text-xl font-mono text-accent mb-6">
+    {profile.headline}
+  </p>
+  <p class="text-text-dim max-w-2xl text-base leading-relaxed mb-8">
+    {profile.bio}
+  </p>
+  <div class="flex flex-wrap items-center gap-4">
+    <a href="#projects" class="px-5 py-2.5 rounded bg-accent text-canvas font-semibold text-sm hover:opacity-90 transition-opacity">
+      View Case Studies
+    </a>
+    <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" class="px-5 py-2.5 rounded border border-stroke bg-surface hover:border-stroke-hover text-sm font-mono text-text-main transition-colors">
+      GitHub Profile ↗
+    </a>
+    <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" class="px-5 py-2.5 rounded border border-stroke bg-surface hover:border-stroke-hover text-sm font-mono text-text-main transition-colors">
+      LinkedIn ↗
+    </a>
+  </div>
+</section>

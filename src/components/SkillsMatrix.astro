@@ -1,0 +1,43 @@
+---
+interface Props {
+  skills: {
+    languages: string[];
+    dataAnalytics: string[];
+    aiAndML: string[];
+    toolsAndCloud: string[];
+  };
+}
+
+const { skills } = Astro.props;
+---
+<section class="mb-16">
+  <h2 class="text-xs font-mono tracking-widest text-text-dim uppercase mb-6 flex items-center gap-2">
+    <span class="text-accent">&gt;</span> Technical Competencies
+  </h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="p-5 rounded-lg border border-stroke bg-panel">
+      <h3 class="font-mono text-sm text-accent mb-3 font-semibold">Data Analytics &amp; Querying</h3>
+      <div class="flex flex-wrap gap-1.5">
+        {skills.dataAnalytics.map(s => <span class="text-xs font-mono px-2 py-1 bg-surface border border-stroke rounded text-text-dim">{s}</span>)}
+      </div>
+    </div>
+    <div class="p-5 rounded-lg border border-stroke bg-panel">
+      <h3 class="font-mono text-sm text-accent mb-3 font-semibold">Applied AI &amp; Engineering</h3>
+      <div class="flex flex-wrap gap-1.5">
+        {skills.aiAndML.map(s => <span class="text-xs font-mono px-2 py-1 bg-surface border border-stroke rounded text-text-dim">{s}</span>)}
+      </div>
+    </div>
+    <div class="p-5 rounded-lg border border-stroke bg-panel">
+      <h3 class="font-mono text-sm text-accent mb-3 font-semibold">Languages &amp; Runtimes</h3>
+      <div class="flex flex-wrap gap-1.5">
+        {skills.languages.map(s => <span class="text-xs font-mono px-2 py-1 bg-surface border border-stroke rounded text-text-dim">{s}</span>)}
+      </div>
+    </div>
+    <div class="p-5 rounded-lg border border-stroke bg-panel">
+      <h3 class="font-mono text-sm text-accent mb-3 font-semibold">Developer Tools &amp; Cloud</h3>
+      <div class="flex flex-wrap gap-1.5">
+        {skills.toolsAndCloud.map(s => <span class="text-xs font-mono px-2 py-1 bg-surface border border-stroke rounded text-text-dim">{s}</span>)}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,41 @@
+---
+import type { Experience } from '../types';
+
+interface Props {
+  experiences: Experience[];
+}
+
+const { experiences } = Astro.props;
+const sortedExperiences = [...experiences].sort((a, b) => a.order - b.order);
+---
+<section id="experience" class="mb-16">
+  <h2 class="text-xs font-mono tracking-widest text-text-dim uppercase mb-6 flex items-center gap-2">
+    <span class="text-accent">&gt;</span> Professional Timeline &amp; Impact
+  </h2>
+  <div class="space-y-8 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-stroke">
+    {sortedExperiences.map(exp => (
+      <div class="relative pl-8">
+        <div class="absolute left-2 top-1.5 w-2.5 h-2.5 rounded-full border-2 border-accent bg-canvas -translate-x-1/2"></div>
+        <div class="p-6 rounded-lg border border-stroke bg-panel">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
+            <h3 class="text-lg font-semibold text-text-main">{exp.role}</h3>
+            <span class="font-mono text-xs text-accent">
+              {exp.startDate} — {exp.isCurrent ? 'Present' : exp.endDate}
+            </span>
+          </div>
+          <p class="font-mono text-sm text-text-dim mb-4">{exp.company} • {exp.location}</p>
+          <ul class="space-y-2 mb-4 text-sm text-text-dim list-disc list-inside">
+            {exp.achievements.map(a => <li>{a}</li>)}
+          </ul>
+          <div class="flex flex-wrap gap-1.5">
+            {exp.skills.map(s => (
+              <span class="text-xs font-mono text-text-dim bg-surface px-2 py-0.5 rounded border border-stroke">
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>

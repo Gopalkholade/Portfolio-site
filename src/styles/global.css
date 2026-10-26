@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 4px;
+}
+
+.prose-portfolio {
+  color: #a1a1aa;
+  font-size: 0.95rem;
+  line-height: 1.85;
+}
+
+.prose-portfolio h2 {
+  margin: 2rem 0 0.75rem;
+  color: #f4f4f5;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.prose-portfolio h3 {
+  margin: 1.5rem 0 0.5rem;
+  color: #e4e4e7;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.prose-portfolio p,
+.prose-portfolio ul,
+.prose-portfolio ol {
+  margin: 0 0 1rem;
+}
+
+.prose-portfolio ul,
+.prose-portfolio ol {
+  padding-left: 1.35rem;
+}
+
+.prose-portfolio ul {
+  list-style: disc;
+}
+
+.prose-portfolio ol {
+  list-style: decimal;
+}
+
+.prose-portfolio li {
+  padding-left: 0.25rem;
+}
+
+.prose-portfolio a {
+  color: #34d399;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.prose-portfolio code {
+  border: 1px solid #27272a;
+  border-radius: 0.3rem;
+  background: #18181b;
+  padding: 0.15rem 0.35rem;
+  color: #a7f3d0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.prose-portfolio pre {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  border: 1px solid #27272a;
+  border-radius: 0.75rem;
+  background: #111113;
+  padding: 1rem;
+}
+
+.prose-portfolio pre code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.prose-portfolio blockquote {
+  margin: 1.25rem 0;
+  border-left: 2px solid #10b981;
+  padding-left: 1rem;
+  color: #d4d4d8;
+}
+

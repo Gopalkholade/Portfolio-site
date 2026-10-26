@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import SkillsMatrix from '../components/SkillsMatrix.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import ExperienceTimeline from '../components/ExperienceTimeline.astro';
+import { getProjects } from '../lib/firebase';
+import profileData from '../data/profile.json';
+import experienceData from '../data/experience.json';
+import type { Profile, Experience } from '../types';
+
+const profile = profileData as Profile;
+const experiences = experienceData as Experience[];
+const allProjects = await getProjects();
+const featuredProjects = allProjects.filter(p => p.featured).slice(0, 4);
+---
+<Layout title={`${profile.name} | ${profile.headline}`}>
+  <Hero profile={profile} />
+  
+  <section id="projects" class="mb-16">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xs font-mono tracking-widest text-text-dim uppercase flex items-center gap-2">
+        <span class="text-accent">&gt;</span> Featured Case Studies
+      </h2>
+      <a href="/projects" class="text-xs font-mono text-accent hover:underline">
+        All Projects ({allProjects.length}) →
+      </a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {featuredProjects.map(project => <ProjectCard project={project} />)}
+    </div>
+  </section>
+
+  <SkillsMatrix skills={profile.skills} />
+  <ExperienceTimeline experiences={experiences} />
+</Layout>

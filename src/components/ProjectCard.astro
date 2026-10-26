@@ -1,0 +1,50 @@
+---
+import type { Project } from '../types';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+---
+<article class="p-6 rounded-lg border border-stroke bg-panel hover:border-stroke-hover transition-all flex flex-col justify-between group">
+  <div>
+    <div class="flex items-center justify-between mb-3">
+      <span class="font-mono text-xs px-2.5 py-0.5 rounded border border-stroke bg-surface text-text-dim">
+        {project.category === 'ai-ml' ? 'AI & Applied ML' : 'Data Analytics'}
+      </span>
+      {project.stars > 0 && (
+        <span class="font-mono text-xs text-text-dim flex items-center gap-1">
+          ★ {project.stars}
+        </span>
+      )}
+    </div>
+    <h3 class="text-xl font-semibold text-text-main group-hover:text-accent transition-colors mb-2">
+      <a href={`/projects/${project.slug}`}>
+        {project.title}
+      </a>
+    </h3>
+    <p class="text-sm text-text-dim leading-relaxed mb-4">
+      {project.description}
+    </p>
+  </div>
+  <div>
+    <div class="flex flex-wrap gap-1.5 mb-5">
+      {project.techStack.map(tech => (
+        <span class="text-xs font-mono text-text-dim bg-surface px-2 py-0.5 rounded">
+          {tech}
+        </span>
+      ))}
+    </div>
+    <div class="flex items-center justify-between pt-4 border-t border-stroke text-sm">
+      <a href={`/projects/${project.slug}`} class="text-accent hover:underline font-mono text-xs">
+        Read Case Study →
+      </a>
+      {project.repoUrl && (
+        <a href={project.repoUrl} target="_blank" rel="noopener noreferrer" class="text-text-dim hover:text-text-main font-mono text-xs">
+          Source Repo ↗
+        </a>
+      )}
+    </div>
+  </div>
+</article>

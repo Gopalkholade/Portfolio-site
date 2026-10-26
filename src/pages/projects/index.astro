@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { getProjects } from '../../lib/firebase';
+
+const projects = await getProjects();
+---
+<Layout title="All Technical Projects | Portfolio">
+  <div class="mb-10">
+    <h1 class="text-3xl font-bold text-text-main mb-2">Technical Projects &amp; Case Studies</h1>
+    <p class="text-sm font-mono text-text-dim">Automated pipeline sync from GitHub repositories</p>
+  </div>
+
+  <div class="flex gap-2 mb-8 border-b border-stroke pb-4 font-mono text-xs" id="filter-tabs">
+    <button class="px-3 py-1.5 rounded bg-surface border border-stroke text-accent filter-btn active" data-filter="all">All ({projects.length})</button>
+    <button class="px-3 py-1.5 rounded border border-transparent text-text-dim hover:text-text-main filter-btn" data-filter="data-analytics">Data Analytics</button>
+    <button class="px-3 py-1.5 rounded border border-transparent text-text-dim hover:text-text-main filter-btn" data-filter="ai-ml">AI &amp; ML</button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="projects-grid">
+    {projects.map(project => (
+      <div class="project-wrapper" data-category={project.category}>
+        <ProjectCard project={project} />
+      </div>
+    ))}
+  </div>
+
+  <script>
+    const buttons = document.querySelectorAll('.filter-btn');
+    const items = document.querySelectorAll('.project-wrapper') as NodeListOf<HTMLElement>;
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => {
+          b.classList.remove('bg-surface', 'border-stroke', 'text-accent');
+          b.classList.add('border-transparent', 'text-text-dim');
+        });
+        btn.classList.add('bg-surface', 'border-stroke', 'text-accent');
+        btn.classList.remove('border-transparent', 'text-text-dim');
+
+        const filter = btn.getAttribute('data-filter');
+        items.forEach(item => {
+          if (filter === 'all' || item.dataset.category === filter) {
+            item.style.display = 'block';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</Layout>
