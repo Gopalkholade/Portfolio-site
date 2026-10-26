@@ -1,0 +1,3 @@
+git add .
+git commit -m "fix: disable jekyll with .nojekyll and route deployment through github actions"
+git push origin main
