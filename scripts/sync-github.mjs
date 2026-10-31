@@ -11,27 +11,14 @@ function initFirebase() {
     throw new Error(`File not found: ${keyPath}`);
   }
 
-  const raw = fs.readFileSync(keyPath, 'utf8');
-  let serviceAccount;
-  try {
-    serviceAccount = JSON.parse(raw);
-  } catch (err) {
-    throw new Error(`serviceAccountKey.json is invalid JSON: ${err.message}`);
-  }
+  const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
 
-  if (!serviceAccount.project_id) {
-    console.error('Service Account content preview:', {
-      hasType: Boolean(serviceAccount.type),
-      hasProjectId: Boolean(serviceAccount.project_id),
-      hasClientEmail: Boolean(serviceAccount.client_email),
-      hasPrivateKey: Boolean(serviceAccount.private_key),
-      keysFound: Object.keys(serviceAccount),
-    });
-    throw new Error('serviceAccountKey.json is missing the "project_id" property.');
+  if (!serviceAccount.project_id || !serviceAccount.private_key) {
+    throw new Error('serviceAccountKey.json is missing required credentials.');
   }
 
   initializeApp({
-    credential: cert(serviceAccount),
+    credential: cert(serviceAccount)
   });
 
   return getFirestore();

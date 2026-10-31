@@ -33,24 +33,14 @@ jobs:
       - name: Create Service Account File
         shell: bash
         env:
-          PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-          PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          B64_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
         run: |
-          node -e '
-            const fs = require("fs");
-            let pk = process.env.PRIVATE_KEY || "";
-            if (pk.startsWith("\"") && pk.endsWith("\"")) pk = pk.slice(1, -1);
-            pk = pk.replace(/\\n/g, "\n");
-            
-            const sa = {
-              type: "service_account",
-              project_id: process.env.PROJECT_ID,
-              client_email: process.env.CLIENT_EMAIL,
-              private_key: pk
-            };
-            fs.writeFileSync("serviceAccountKey.json", JSON.stringify(sa, null, 2));
-          '
+          if [ -z "$B64_KEY" ]; then
+            echo "ERROR: FIREBASE_SERVICE_ACCOUNT_BASE64 secret is empty!"
+            exit 1
+          fi
+          echo "$B64_KEY" | base64 --decode > serviceAccountKey.json
+          echo "Restored serviceAccountKey.json successfully."
 
       - name: Sync GitHub Projects to Firestore
         env:
