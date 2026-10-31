@@ -9,52 +9,17 @@ dotenv.config();
 function initFirebase() {
   if (getApps().length > 0) return getFirestore();
 
-  // 1. Base64 decoded secret (Best for GitHub Actions)
-  const b64Config = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64?.trim();
-  if (b64Config) {
-    try {
-      const decodedJson = Buffer.from(b64Config, 'base64').toString('utf8');
-      const serviceAccount = JSON.parse(decodedJson);
-      initializeApp({ credential: cert(serviceAccount) });
-      return getFirestore();
-    } catch (e) {
-      console.warn('⚠️ Could not parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e.message);
-    }
+  const keyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
+  if (!fs.existsSync(keyPath)) {
+    throw new Error(`Missing serviceAccountKey.json at ${keyPath}`);
   }
 
-  // 2. Local serviceAccountKey.json fallback
-  const localKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
-  if (fs.existsSync(localKeyPath)) {
-    try {
-      const serviceAccount = JSON.parse(fs.readFileSync(localKeyPath, 'utf8'));
-      initializeApp({ credential: cert(serviceAccount) });
-      return getFirestore();
-    } catch (e) {
-      console.warn('⚠️ Could not parse serviceAccountKey.json:', e.message);
-    }
-  }
+  const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+  initializeApp({
+    credential: cert(serviceAccount)
+  });
 
-  // 3. Discrete environment variables fallback
-  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
-  let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
-
-  if (projectId && clientEmail && privateKey) {
-    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-      privateKey = privateKey.slice(1, -1);
-    }
-    if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
-      privateKey = privateKey.slice(1, -1);
-    }
-    privateKey = privateKey.replace(/\\n/g, '\n');
-
-    initializeApp({
-      credential: cert({ projectId, clientEmail, privateKey }),
-    });
-    return getFirestore();
-  }
-
-  throw new Error('No valid Firebase credentials found in FIREBASE_SERVICE_ACCOUNT_BASE64, serviceAccountKey.json, or environment variables.');
+  return getFirestore();
 }
 
 async function syncRepos() {
