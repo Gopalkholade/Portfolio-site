@@ -9,19 +9,7 @@ dotenv.config();
 function initFirebase() {
   if (getApps().length > 0) return getFirestore();
 
-  // 1. Local file fallback
-  const localKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
-  if (fs.existsSync(localKeyPath)) {
-    try {
-      const serviceAccount = JSON.parse(fs.readFileSync(localKeyPath, 'utf8'));
-      initializeApp({ credential: cert(serviceAccount) });
-      return getFirestore();
-    } catch (e) {
-      console.warn('⚠️ Could not parse local serviceAccountKey.json:', e.message);
-    }
-  }
-
-  // 2. Base64 decoded secret (Best for GitHub Actions)
+  // 1. Base64 decoded secret (Best for GitHub Actions)
   const b64Config = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64?.trim();
   if (b64Config) {
     try {
@@ -30,11 +18,23 @@ function initFirebase() {
       initializeApp({ credential: cert(serviceAccount) });
       return getFirestore();
     } catch (e) {
-      console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e.message);
+      console.warn('⚠️ Could not parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e.message);
     }
   }
 
-  // 3. Fallback: discrete environment variables
+  // 2. Local serviceAccountKey.json fallback
+  const localKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
+  if (fs.existsSync(localKeyPath)) {
+    try {
+      const serviceAccount = JSON.parse(fs.readFileSync(localKeyPath, 'utf8'));
+      initializeApp({ credential: cert(serviceAccount) });
+      return getFirestore();
+    } catch (e) {
+      console.warn('⚠️ Could not parse serviceAccountKey.json:', e.message);
+    }
+  }
+
+  // 3. Discrete environment variables fallback
   const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
   let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
@@ -43,14 +43,18 @@ function initFirebase() {
     if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
       privateKey = privateKey.slice(1, -1);
     }
+    if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
+      privateKey = privateKey.slice(1, -1);
+    }
     privateKey = privateKey.replace(/\\n/g, '\n');
+
     initializeApp({
       credential: cert({ projectId, clientEmail, privateKey }),
     });
     return getFirestore();
   }
 
-  throw new Error('No valid Firebase credentials found in serviceAccountKey.json, FIREBASE_SERVICE_ACCOUNT_BASE64, or discrete env vars.');
+  throw new Error('No valid Firebase credentials found in FIREBASE_SERVICE_ACCOUNT_BASE64, serviceAccountKey.json, or environment variables.');
 }
 
 async function syncRepos() {
