@@ -10,13 +10,27 @@ function initFirebase() {
   if (getApps().length > 0) return getFirestore();
 
   const keyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
-  if (!fs.existsSync(keyPath)) {
-    throw new Error(`Missing serviceAccountKey.json at ${keyPath}`);
+  if (fs.existsSync(keyPath)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+    initializeApp({
+      credential: cert(serviceAccount)
+    });
+    return getFirestore();
   }
 
-  const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+  // Fallback to env variable with proper OpenSSL PEM formatting
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY || '';
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  privateKey = privateKey.replace(/\\n/g, '\n');
+
   initializeApp({
-    credential: cert(serviceAccount)
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: privateKey,
+    })
   });
 
   return getFirestore();

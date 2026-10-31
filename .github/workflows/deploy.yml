@@ -48,36 +48,10 @@ jobs:
       - name: Create Service Account File
         shell: bash
         env:
-<<<<<<< HEAD
-          B64_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}
-=======
->>>>>>> 87e78ce (chnage mjs retry2)
           PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
         run: |
-<<<<<<< HEAD
-          if [ -n "$B64_KEY" ]; then
-            echo "$B64_KEY" | base64 --decode > serviceAccountKey.json
-            echo "Successfully restored serviceAccountKey.json from Base64."
-          else
-            node -e '
-              const fs = require("fs");
-              let pk = process.env.PRIVATE_KEY || "";
-              if (pk.startsWith("\"") && pk.endsWith("\"")) pk = pk.slice(1, -1);
-              pk = pk.replace(/\\n/g, "\n");
-              
-              const sa = {
-                type: "service_account",
-                project_id: process.env.PROJECT_ID,
-                client_email: process.env.CLIENT_EMAIL,
-                private_key: pk
-              };
-              fs.writeFileSync("serviceAccountKey.json", JSON.stringify(sa, null, 2));
-            '
-            echo "Constructed serviceAccountKey.json from individual secrets."
-          fi
-=======
           node -e '
             const fs = require("fs");
             let pk = process.env.PRIVATE_KEY || "";
@@ -92,26 +66,17 @@ jobs:
             };
             fs.writeFileSync("serviceAccountKey.json", JSON.stringify(sa, null, 2));
           '
->>>>>>> 87e78ce (chnage mjs retry2)
 
       - name: Sync GitHub Projects to Firestore
         env:
           GITHUB_TOKEN: ${{ secrets.GH_SYNC_TOKEN }}
           GITHUB_USERNAME: "GopalKholade"
-<<<<<<< HEAD
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccountKey.json
-=======
->>>>>>> 87e78ce (chnage mjs retry2)
         run: node scripts/sync-github.mjs
 
       - name: Build Astro static site
         env:
           SITE_URL: "https://gopalkholade.github.io"
           BASE_PATH: "/"
-<<<<<<< HEAD
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccountKey.json
-=======
->>>>>>> 87e78ce (chnage mjs retry2)
         run: npm run build
 
       - name: Upload GitHub Pages artifact
