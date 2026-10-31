@@ -1,35 +1,65 @@
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import fs from 'node:fs';
+import path from 'node:path';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-if (privateKey?.startsWith('"') && privateKey?.endsWith('"')) {
-  privateKey = privateKey.slice(1, -1);
+function initFirebase() {
+  if (getApps().length > 0) return getFirestore();
+
+  // 1. Local development fallback: serviceAccountKey.json
+  const localKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
+  if (fs.existsSync(localKeyPath)) {
+    try {
+      const serviceAccount = JSON.parse(fs.readFileSync(localKeyPath, 'utf8'));
+      initializeApp({ credential: cert(serviceAccount) });
+      return getFirestore();
+    } catch (e) {
+      console.warn('⚠️ Could not parse local serviceAccountKey.json:', e.message);
+    }
+  }
+
+  // 2. Production/CI: Environment variables
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
+
+  if (!projectId || !clientEmail || !privateKey) {
+    console.error('❌ Critical Error: Missing Firebase credentials.');
+    console.error(`Status -> Project ID: ${Boolean(projectId)}, Client Email: ${Boolean(clientEmail)}, Private Key: ${Boolean(privateKey)}`);
+    throw new Error('Missing FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, or FIREBASE_PRIVATE_KEY environment variables.');
+  }
+
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  privateKey = privateKey.replace(/\\n/g, '\n');
+
+  initializeApp({
+    credential: cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
+  });
+
+  return getFirestore();
 }
-privateKey = privateKey?.replace(/\\n/g, '\n');
-
-initializeApp({
-  credential: cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey,
-  }),
-});
-
-const db = getFirestore();
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_USERNAME = process.env.GITHUB_USERNAME;
 
 async function syncRepos() {
+  const db = initFirebase();
+  const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+  const GITHUB_USERNAME = process.env.GITHUB_USERNAME || 'GopalKholade';
+
   console.log(`Polling public repositories for user: ${GITHUB_USERNAME}...`);
   const headers = {
     Accept: 'application/vnd.github.v3+json',
     ...(GITHUB_TOKEN ? { Authorization: `token ${GITHUB_TOKEN}` } : {}),
   };
 
-  const response = await fetch(`[https://api.github.com/users/$](https://api.github.com/users/$){GITHUB_USERNAME}/repos?per_page=100`, { headers });
+  const response = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100`, { headers });
   if (!response.ok) {
     throw new Error(`Failed to fetch repos: ${response.statusText}`);
   }
@@ -42,7 +72,7 @@ async function syncRepos() {
     console.log(`Processing ${repo.name}...`);
     let readmeText = '';
     try {
-      const readmeRes = await fetch(`[https://raw.githubusercontent.com/$](https://raw.githubusercontent.com/$){repo.full_name}/${repo.default_branch}/README.md`);
+      const readmeRes = await fetch(`https://raw.githubusercontent.com/${repo.full_name}/${repo.default_branch}/README.md`);
       if (readmeRes.ok) {
         readmeText = await readmeRes.text();
       }
@@ -77,4 +107,7 @@ async function syncRepos() {
   console.log('GitHub-to-Firebase sync complete.');
 }
 
-syncRepos().catch(console.error);
+syncRepos().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
