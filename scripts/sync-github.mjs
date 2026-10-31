@@ -6,10 +6,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+function formatPrivateKey(key) {
+  if (!key) return '';
+  let cleaned = key.trim();
+  // Strip outer quotes if pasted with them
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  // Convert literal \n or escaped \\n into standard newlines
+  return cleaned.replace(/\\n/g, '\n');
+}
+
 function initFirebase() {
   if (getApps().length > 0) return getFirestore();
 
-  // 1. Local development fallback: serviceAccountKey.json
+  // 1. Local fallback: serviceAccountKey.json
   const localKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
   if (fs.existsSync(localKeyPath)) {
     try {
@@ -24,18 +38,12 @@ function initFirebase() {
   // 2. Production/CI: Environment variables
   const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
-  let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
+  const rawKey = process.env.FIREBASE_PRIVATE_KEY;
+  const privateKey = formatPrivateKey(rawKey);
 
   if (!projectId || !clientEmail || !privateKey) {
-    console.error('❌ Critical Error: Missing Firebase credentials.');
-    console.error(`Status -> Project ID: ${Boolean(projectId)}, Client Email: ${Boolean(clientEmail)}, Private Key: ${Boolean(privateKey)}`);
-    throw new Error('Missing FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, or FIREBASE_PRIVATE_KEY environment variables.');
+    throw new Error('Missing FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, or FIREBASE_PRIVATE_KEY.');
   }
-
-  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-    privateKey = privateKey.slice(1, -1);
-  }
-  privateKey = privateKey.replace(/\\n/g, '\n');
 
   initializeApp({
     credential: cert({
