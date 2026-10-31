@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Helper to guarantee a valid, standard URL format
 function resolveSiteUrl() {
   const envUrl = process.env.SITE_URL?.trim();
   if (envUrl) {
@@ -12,16 +11,15 @@ function resolveSiteUrl() {
       const parsed = new URL(envUrl);
       return parsed.origin;
     } catch {
-      // Ignore malformed env strings and fall back
+      // Fallback if parsing fails
     }
   }
-  // Standard valid fallback for GitHub Pages
   return 'https://gopalkholade.github.io';
 }
 
 export default defineConfig({
   output: 'static',
   site: resolveSiteUrl(),
-  base: process.env.BASE_PATH || '/',
+  base: '/',
   integrations: [tailwind()],
 });
