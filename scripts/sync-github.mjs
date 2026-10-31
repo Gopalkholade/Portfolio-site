@@ -2,35 +2,36 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import fs from 'node:fs';
 import path from 'node:path';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 function initFirebase() {
   if (getApps().length > 0) return getFirestore();
 
   const keyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
-  if (fs.existsSync(keyPath)) {
-    const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-    initializeApp({
-      credential: cert(serviceAccount)
-    });
-    return getFirestore();
+  if (!fs.existsSync(keyPath)) {
+    throw new Error(`File not found: ${keyPath}`);
   }
 
-  // Fallback to env variable with proper OpenSSL PEM formatting
-  let privateKey = process.env.FIREBASE_PRIVATE_KEY || '';
-  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-    privateKey = privateKey.slice(1, -1);
+  const raw = fs.readFileSync(keyPath, 'utf8');
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`serviceAccountKey.json is invalid JSON: ${err.message}`);
   }
-  privateKey = privateKey.replace(/\\n/g, '\n');
+
+  if (!serviceAccount.project_id) {
+    console.error('Service Account content preview:', {
+      hasType: Boolean(serviceAccount.type),
+      hasProjectId: Boolean(serviceAccount.project_id),
+      hasClientEmail: Boolean(serviceAccount.client_email),
+      hasPrivateKey: Boolean(serviceAccount.private_key),
+      keysFound: Object.keys(serviceAccount),
+    });
+    throw new Error('serviceAccountKey.json is missing the "project_id" property.');
+  }
 
   initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey,
-    })
+    credential: cert(serviceAccount),
   });
 
   return getFirestore();
