@@ -1,6 +1,8 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import type { Project } from '../types';
+import fs from 'node:fs';
+import path from 'node:path';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -12,12 +14,35 @@ function getFirebaseApp(): App | null {
     return getApps()[0];
   }
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  // 1. Local file
+  const localKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
+  if (fs.existsSync(localKeyPath)) {
+    try {
+      const serviceAccount = JSON.parse(fs.readFileSync(localKeyPath, 'utf8'));
+      return initializeApp({ credential: cert(serviceAccount) });
+    } catch (err) {
+      console.warn('⚠️ Local serviceAccountKey.json found but unreadable:', err);
+    }
+  }
+
+  // 2. Base64 decoded secret
+  const b64Config = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64?.trim();
+  if (b64Config) {
+    try {
+      const decodedJson = Buffer.from(b64Config, 'base64').toString('utf8');
+      const serviceAccount = JSON.parse(decodedJson);
+      return initializeApp({ credential: cert(serviceAccount) });
+    } catch (err) {
+      console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_BASE64 decode failed:', err);
+    }
+  }
+
+  // 3. Fallback: discrete env vars
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
 
   if (!projectId || !clientEmail || !privateKey) {
-    console.warn('⚠️ Missing Firebase Admin environment variables. Running in offline/mock mode.');
     return null;
   }
 
@@ -26,12 +51,11 @@ function getFirebaseApp(): App | null {
       privateKey = privateKey.slice(1, -1);
     }
     privateKey = privateKey.replace(/\\n/g, '\n');
-
     return initializeApp({
       credential: cert({ projectId, clientEmail, privateKey }),
     });
   } catch (err) {
-    console.warn('⚠️ Firebase Admin failed to initialize:', err);
+    console.warn('⚠️ Firebase Admin failed to initialize from env:', err);
     return null;
   }
 }
@@ -42,11 +66,7 @@ if (app) {
 }
 
 export async function getProjects(category?: string): Promise<Project[]> {
-  if (!db) {
-    console.warn('⚠️ Firestore unavailable. Returning empty projects list.');
-    return [];
-  }
-
+  if (!db) return [];
   try {
     let query = db.collection('projects').where('published', '==', true);
     if (category) {

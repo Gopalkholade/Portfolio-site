@@ -6,24 +6,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-function formatPrivateKey(key) {
-  if (!key) return '';
-  let cleaned = key.trim();
-  // Strip outer quotes if pasted with them
-  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
-    cleaned = cleaned.slice(1, -1);
-  }
-  if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
-    cleaned = cleaned.slice(1, -1);
-  }
-  // Convert literal \n or escaped \\n into standard newlines
-  return cleaned.replace(/\\n/g, '\n');
-}
-
 function initFirebase() {
   if (getApps().length > 0) return getFirestore();
 
-  // 1. Local fallback: serviceAccountKey.json
+  // 1. Local file fallback
   const localKeyPath = path.resolve(process.cwd(), 'serviceAccountKey.json');
   if (fs.existsSync(localKeyPath)) {
     try {
@@ -35,25 +21,36 @@ function initFirebase() {
     }
   }
 
-  // 2. Production/CI: Environment variables
-  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
-  const rawKey = process.env.FIREBASE_PRIVATE_KEY;
-  const privateKey = formatPrivateKey(rawKey);
-
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error('Missing FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, or FIREBASE_PRIVATE_KEY.');
+  // 2. Base64 decoded secret (Best for GitHub Actions)
+  const b64Config = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64?.trim();
+  if (b64Config) {
+    try {
+      const decodedJson = Buffer.from(b64Config, 'base64').toString('utf8');
+      const serviceAccount = JSON.parse(decodedJson);
+      initializeApp({ credential: cert(serviceAccount) });
+      return getFirestore();
+    } catch (e) {
+      console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e.message);
+    }
   }
 
-  initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
+  // 3. Fallback: discrete environment variables
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY?.trim();
 
-  return getFirestore();
+  if (projectId && clientEmail && privateKey) {
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(1, -1);
+    }
+    privateKey = privateKey.replace(/\\n/g, '\n');
+    initializeApp({
+      credential: cert({ projectId, clientEmail, privateKey }),
+    });
+    return getFirestore();
+  }
+
+  throw new Error('No valid Firebase credentials found in serviceAccountKey.json, FIREBASE_SERVICE_ACCOUNT_BASE64, or discrete env vars.');
 }
 
 async function syncRepos() {
